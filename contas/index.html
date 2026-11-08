@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contas Divertidas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+  <header>
+    <h1>🧮 Contas Divertidas</h1>
+    <div class="placar" title="Estrelas ganhas">⭐ <span id="estrelas">0</span></div>
+  </header>
+
+  <nav class="abas">
+    <button class="aba ativa" data-aba="ajuda">🆘 Me ajude</button>
+    <button class="aba" data-aba="treino">🎯 Treinar</button>
+    <button class="aba" data-aba="tabuada">✖️ Tabuada</button>
+  </nav>
+
+  <main>
+    <!-- Me ajude com a conta do tema -->
+    <section id="ajuda" class="painel ativo">
+      <p class="intro">Digite a conta do seu tema de casa e eu mostro <b>passo a passo</b> como resolver!</p>
+      <form id="form-ajuda" class="cartao entrada">
+        <input id="num1" type="text" inputmode="numeric" maxlength="7" placeholder="0" aria-label="Primeiro número" autocomplete="off">
+        <div class="ops" role="radiogroup" aria-label="Operação">
+          <button type="button" class="op-btn sel" data-op="+">+</button>
+          <button type="button" class="op-btn" data-op="-">−</button>
+          <button type="button" class="op-btn" data-op="×">×</button>
+          <button type="button" class="op-btn" data-op="÷">÷</button>
+        </div>
+        <input id="num2" type="text" inputmode="numeric" maxlength="7" placeholder="0" aria-label="Segundo número" autocomplete="off">
+        <button type="submit" class="grande primario">Me ajude! 🚀</button>
+      </form>
+      <p id="erro-ajuda" class="erro" hidden></p>
+      <div id="passos-ajuda"></div>
+    </section>
+
+    <!-- Treino -->
+    <section id="treino" class="painel">
+      <div class="cartao opcoes">
+        <div class="grupo">
+          <span>Conta:</span>
+          <div class="chips" id="treino-op">
+            <button class="chip sel" data-v="+">+</button>
+            <button class="chip" data-v="-">−</button>
+            <button class="chip" data-v="×">×</button>
+            <button class="chip" data-v="÷">÷</button>
+            <button class="chip" data-v="mix">🎲</button>
+          </div>
+        </div>
+        <div class="grupo">
+          <span>Nível:</span>
+          <div class="chips" id="treino-nivel">
+            <button class="chip sel" data-v="1">🐣 Fácil</button>
+            <button class="chip" data-v="2">🐥 Médio</button>
+            <button class="chip" data-v="3">🦅 Difícil</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cartao exercicio">
+        <div class="sequencia">🔥 Acertos seguidos: <b id="seq">0</b></div>
+        <div class="pergunta" id="pergunta"></div>
+        <div class="resposta" id="resposta" aria-live="polite">?</div>
+        <div class="feedback" id="feedback" aria-live="polite"></div>
+        <div class="teclado" id="teclado">
+          <button>7</button><button>8</button><button>9</button>
+          <button>4</button><button>5</button><button>6</button>
+          <button>1</button><button>2</button><button>3</button>
+          <button class="apagar" data-k="apagar" aria-label="Apagar">⌫</button><button>0</button><button class="ok" data-k="ok">OK</button>
+        </div>
+        <div class="acoes">
+          <button id="btn-como" class="grande secundario">🤔 Como resolve?</button>
+          <button id="btn-proxima" class="grande primario">Próxima ➡️</button>
+        </div>
+      </div>
+      <div id="passos-treino"></div>
+    </section>
+
+    <!-- Tabuada -->
+    <section id="tabuada" class="painel">
+      <p class="intro">Escolha um número. Toque em cada conta para ver a resposta!</p>
+      <div class="chips numeros" id="tab-num"></div>
+      <div class="cartao">
+        <div class="tab-topo">
+          <h2 id="tab-titulo">Tabuada do 1</h2>
+          <button id="tab-todas" class="pequeno">👀 Mostrar todas</button>
+        </div>
+        <div class="tab-lista" id="tab-lista"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="festa" aria-hidden="true"></div>
+
+  <script src="contas.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
