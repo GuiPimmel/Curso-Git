@@ -29,9 +29,14 @@ function festa() {
 }
 
 /* ---------- Abas ---------- */
+function irPara(aba) {
+  $$('.aba').forEach(x => x.classList.toggle('ativa', x.dataset.aba === aba));
+  $$('.painel').forEach(p => p.classList.toggle('ativo', p.id === aba));
+  window.scrollTo({ top: 0 });
+}
 $$('.aba').forEach(b => b.addEventListener('click', () => {
-  $$('.aba').forEach(x => x.classList.toggle('ativa', x === b));
-  $$('.painel').forEach(p => p.classList.toggle('ativo', p.id === b.dataset.aba));
+  if (b.dataset.aba !== 'bolinhas') $('#bol-voltar').hidden = true;
+  irPara(b.dataset.aba);
 }));
 
 function escolhaUnica(container, aoMudar) {
@@ -86,7 +91,7 @@ function mostrarPassos(alvo, res) {
 
 /* ---------- Me ajude ---------- */
 let opAjuda = '+';
-escolhaUnica($('.ops'), b => { opAjuda = b.dataset.op; });
+escolhaUnica($('#ajuda-ops'), b => { opAjuda = b.dataset.op; });
 ['#num1', '#num2'].forEach(s => $(s).addEventListener('input', e => {
   e.target.value = e.target.value.replace(/\D/g, '');
 }));
@@ -106,6 +111,218 @@ $('#form-ajuda').addEventListener('submit', e => {
   erro.hidden = true;
   mostrarPassos(destino, res);
 });
+
+$('#ajuda-bol').addEventListener('click', () => {
+  const v1 = $('#num1').value, v2 = $('#num2').value;
+  if (!v1 || !v2) {
+    const erro = $('#erro-ajuda');
+    erro.textContent = 'Escreva os dois números da conta. ✏️'; erro.hidden = false;
+    return;
+  }
+  abrirBolinhas(Number(v1), opAjuda, Number(v2), false);
+});
+
+/* ---------- Contar com bolinhas ---------- */
+const OBJETOS = ['⚽', '🏀', '⚾', '🎾', '🍎', '🍓', '⭐', '🐶', '🐱', '🚗', '🔵'];
+const LIMITE_BOLAS = 100;
+let objeto = '⚽', opBol = '+', mesa = null, autoTimer = null;
+try { objeto = localStorage.getItem('contas-objeto') || '⚽'; } catch (e) { /* ignora */ }
+
+function primeiroDesenho(txt) {
+  txt = txt.trim();
+  if (!txt) return '';
+  if (window.Intl && Intl.Segmenter) {
+    const seg = new Intl.Segmenter('pt', { granularity: 'grapheme' }).segment(txt)[Symbol.iterator]().next();
+    return seg.value ? seg.value.segment : '';
+  }
+  return Array.from(txt)[0];
+}
+function guardarObjeto(o) {
+  objeto = o;
+  try { localStorage.setItem('contas-objeto', o); } catch (e) { /* ignora */ }
+  if (mesa) desenharMesa();
+}
+const objetos = $('#bol-objetos');
+objetos.innerHTML = OBJETOS.map(o => `<button class="chip" aria-label="Contar com ${o}">${o}</button>`).join('');
+function marcarObjeto() {
+  let achou = false;
+  objetos.querySelectorAll('button').forEach(b => { const s = b.textContent === objeto; b.classList.toggle('sel', s); achou = achou || s; });
+  $('#bol-custom').classList.toggle('sel', !achou);
+  if (!achou) $('#bol-custom').value = objeto;
+}
+escolhaUnica(objetos, b => { $('#bol-custom').value = ''; guardarObjeto(b.textContent); marcarObjeto(); });
+$('#bol-custom').addEventListener('input', e => {
+  const o = primeiroDesenho(e.target.value);
+  if (o) { guardarObjeto(o); marcarObjeto(); }
+});
+marcarObjeto();
+
+escolhaUnica($('#bol-ops'), b => { opBol = b.dataset.op; });
+['#bol1', '#bol2'].forEach(s => $(s).addEventListener('input', e => {
+  e.target.value = e.target.value.replace(/\D/g, '');
+}));
+$('#form-bol').addEventListener('submit', e => {
+  e.preventDefault();
+  const v1 = $('#bol1').value, v2 = $('#bol2').value;
+  if (!v1 || !v2) return erroBolinhas('Escreva os dois números. ✏️');
+  montarMesa(Number(v1), opBol, Number(v2));
+});
+
+function erroBolinhas(msg) {
+  const e = $('#erro-bol');
+  e.textContent = msg; e.hidden = !msg;
+  $('#mesa').hidden = !!msg;
+}
+
+function abrirBolinhas(a, op, b, doTreino) {
+  $('#bol1').value = a; $('#bol2').value = b; opBol = op;
+  $('#bol-ops').querySelectorAll('button').forEach(x => x.classList.toggle('sel', x.dataset.op === op));
+  $('#bol-voltar').hidden = !doTreino;
+  irPara('bolinhas');
+  montarMesa(a, op, b);
+}
+
+function montarMesa(a, op, b) {
+  pararAuto();
+  if (op === '-' && a < b) return erroBolinhas('Não dá para tirar mais bolinhas do que temos! O primeiro número precisa ser maior.');
+  if (op === '÷' && b === 0) return erroBolinhas('Não dá para repartir entre zero amigos! Use um número maior que 0.');
+  if (op === '÷' && b > 10) return erroBolinhas('São amigos demais! Para repartir, use até 10 amigos.');
+  const total = { '+': a + b, '-': a, '×': a * b, '÷': a }[op];
+  if (total > LIMITE_BOLAS) return erroBolinhas(`Seriam ${total} bolinhas, é muita coisa para contar! Use números menores (até ${LIMITE_BOLAS} bolinhas) ou peça ajuda na aba 🆘 Me ajude.`);
+  erroBolinhas('');
+  const bolas = [];
+  const add = (n, grupo) => { for (let i = 0; i < n; i++) bolas.push({ grupo, tirada: false, num: 0, caixa: -1 }); };
+  if (op === '+') { add(a, 0); add(b, 1); }
+  else if (op === '×') for (let g = 0; g < b; g++) add(a, g);
+  else add(a, 0);
+  const alvo = { '+': a + b, '-': a - b, '×': a * b, '÷': Math.floor(a / b) }[op];
+  mesa = { a, op, b, bolas, alvo, contei: 0, tiradas: 0, dadas: 0, ultima: -1,
+    fase: op === '-' && b > 0 ? 'tirar' : op === '÷' ? 'repartir' : 'contar' };
+  verificarFim();
+  desenharMesa();
+}
+
+function verificarFim() {
+  const m = mesa;
+  if (m.fase === 'tirar' && m.tiradas === m.b) m.fase = 'contar';
+  if (m.fase === 'contar' && m.contei === m.alvo) m.fase = 'fim';
+  if (m.fase === 'repartir' && m.a - m.dadas < m.b) m.fase = 'fim';
+}
+
+function tocarBola(i) {
+  const m = mesa, bola = m.bolas[i];
+  if (!bola || m.fase === 'fim') return;
+  if (m.fase === 'tirar') {
+    if (bola.tirada) return;
+    bola.tirada = true; m.tiradas++;
+  } else if (m.fase === 'contar') {
+    if (bola.tirada || bola.num) return;
+    bola.num = ++m.contei;
+  } else if (m.fase === 'repartir') {
+    if (bola.caixa >= 0) return;
+    bola.caixa = m.dadas % m.b; m.dadas++;
+  }
+  m.ultima = i;
+  verificarFim();
+  desenharMesa();
+  if (m.fase === 'fim') { pararAuto(); festa(); }
+}
+
+function proximaBola() {
+  const m = mesa, bs = m.bolas;
+  if (m.fase === 'tirar') { for (let i = bs.length - 1; i >= 0; i--) if (!bs[i].tirada) return i; }
+  if (m.fase === 'contar') return bs.findIndex(x => !x.tirada && !x.num);
+  if (m.fase === 'repartir') return bs.findIndex(x => x.caixa < 0);
+  return -1;
+}
+
+function pararAuto() {
+  clearInterval(autoTimer); autoTimer = null;
+  $('#bol-auto').textContent = '🗣️ Contar junto';
+}
+$('#bol-auto').addEventListener('click', () => {
+  if (autoTimer) return pararAuto();
+  if (!mesa || mesa.fase === 'fim') return;
+  $('#bol-auto').textContent = '⏸️ Parar';
+  autoTimer = setInterval(() => {
+    const i = proximaBola();
+    if (i < 0) return pararAuto();
+    tocarBola(i);
+  }, 700);
+});
+$('#bol-reset').addEventListener('click', () => { if (mesa) montarMesa(mesa.a, mesa.op, mesa.b); });
+$('#bol-voltar').addEventListener('click', () => { pararAuto(); $('#bol-voltar').hidden = true; irPara('treino'); });
+
+function htmlBolas(lista) {
+  // agrupa de 5 em 5 para facilitar a contagem
+  let h = '';
+  for (let k = 0; k < lista.length; k += 5) {
+    h += '<span class="cinco">' + lista.slice(k, k + 5).map(({ bola, i }) => {
+      const cls = ['bola'];
+      if (bola.num) cls.push('contada');
+      if (bola.tirada) cls.push('tirada');
+      if (i === mesa.ultima) cls.push('pop');
+      const num = bola.num ? `<span class="num">${bola.num}</span>` : '';
+      return `<button class="${cls.join(' ')}" data-i="${i}" aria-label="${objeto} ${i + 1}">${objeto}${num}</button>`;
+    }).join('') + '</span>';
+  }
+  return h;
+}
+
+function desenharMesa() {
+  const m = mesa, { a, b, op } = m, o = objeto;
+  const sim = { '+': '+', '-': '−', '×': '×', '÷': '÷' }[op];
+  const comIndice = m.bolas.map((bola, i) => ({ bola, i }));
+  const doGrupo = g => comIndice.filter(x => x.bola.grupo === g);
+  let area = '', instr = '', cont = '';
+
+  if (op === '+') {
+    area = `<div class="grupo-bolas">${htmlBolas(doGrupo(0))}</div><span class="sinal">+</span><div class="grupo-bolas g1">${htmlBolas(doGrupo(1))}</div>`;
+    instr = `Temos <b>${a}</b> ${o} de um lado e mais <b>${b}</b> ${o} do outro. Toque em cada um para contar <b>quantos tem ao todo</b>!`;
+  } else if (op === '-') {
+    area = `<div class="grupo-bolas">${htmlBolas(doGrupo(0))}</div>`;
+    instr = m.fase === 'tirar'
+      ? `Temos <b>${a}</b> ${o}. Toque em <b>${b}</b> deles para <b>tirar</b>. Falta tirar <b>${b - m.tiradas}</b>.`
+      : `Tiramos ${b}. Agora toque nos que <b>sobraram</b> para contar!`;
+  } else if (op === '×') {
+    area = Array.from({ length: b }, (_, g) =>
+      `<div class="grupo-bolas${g % 2 ? ' g1' : ''}"><span class="rotulo">grupo ${g + 1}</span>${htmlBolas(doGrupo(g))}</div>`).join('');
+    instr = `São <b>${b} grupos</b> com <b>${a}</b> ${o} em cada um. Conte todos!`;
+    if (b > 1 && a > 0) instr += `<br><small>Dica: ${Array(b).fill(a).join(' + ')}</small>`;
+  } else {
+    const monte = comIndice.filter(x => x.bola.caixa < 0);
+    area = `<div class="grupo-bolas monte"><span class="rotulo">para repartir</span>${htmlBolas(monte)}</div>`;
+    area += '<div class="caixas">' + Array.from({ length: b }, (_, c) =>
+      `<div class="grupo-bolas caixa"><span class="rotulo">🧒 ${c + 1}</span>${htmlBolas(comIndice.filter(x => x.bola.caixa === c))}</div>`).join('') + '</div>';
+    instr = `Vamos repartir <b>${a}</b> ${o} entre <b>${b} amigos</b>. Toque numa bolinha para dar ao próximo amigo, <b>um de cada vez</b>.`;
+  }
+
+  if (m.fase === 'contar') cont = m.contei ? `Contei: ${m.contei}` : '';
+  if (m.fase === 'repartir') cont = m.dadas ? `Já dei ${m.dadas} de ${a}` : '';
+  if (m.fase === 'fim') {
+    if (op === '÷') {
+      const q = Math.floor(a / b), r = a % b;
+      instr = `🎉 Cada amigo ficou com <b>${q}</b> ${o}` + (r ? ` e <b>sobr${r > 1 ? 'aram' : 'ou'} ${r}</b>, que não dá para repartir.` : '.') +
+        `<br><b>${a} ÷ ${b} = ${q}</b>${r ? ` (resto ${r})` : ''}`;
+    } else {
+      const resp = m.alvo;
+      instr = `🎉 Muito bem! ${op === '-' ? 'Sobraram' : 'Deu'} <b>${resp}</b> ${o}.<br><b>${a} ${sim} ${b} = ${resp}</b>`;
+      if (resp === 0) instr = `${op === '×' ? 'Qualquer número vezes 0 dá 0!' : 'Não sobrou nada!'}<br><b>${a} ${sim} ${b} = 0</b>`;
+    }
+    cont = '';
+  }
+
+  $('#bol-titulo').textContent = `${a} ${sim} ${b} = ${m.fase === 'fim' ? (op === '÷' ? Math.floor(a / b) : m.alvo) : '?'}`;
+  const ins = $('#bol-instr'); ins.innerHTML = instr; ins.classList.toggle('fim', m.fase === 'fim');
+  const ar = $('#bol-area'); ar.innerHTML = area; ar.classList.toggle('muitas', m.bolas.length > 40);
+  $('#bol-cont').textContent = cont;
+  m.ultima = -1;
+}
+$('#bol-area').addEventListener('click', e => {
+  const b = e.target.closest('.bola');
+  if (b) { pararAuto(); tocarBola(Number(b.dataset.i)); }
+});
+montarMesa(3, '+', 4);
 
 /* ---------- Treino ---------- */
 let opTreino = '+', nivel = 1, atual = null, digitado = '', tentativas = 0, acertou = false, seq = 0;
@@ -166,6 +383,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Enter') { e.preventDefault(); digitar('ok'); }
 });
 $('#btn-proxima').addEventListener('click', novoExercicio);
+$('#btn-bol').addEventListener('click', () => abrirBolinhas(atual.a, atual.op, atual.b, true));
 $('#btn-como').addEventListener('click', () => {
   tentativas = Math.max(tentativas, 1); // ver a resposta não vale estrela
   mostrarPassos($('#passos-treino'), resolver(atual.a, atual.op, atual.b));
