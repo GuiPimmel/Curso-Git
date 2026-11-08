@@ -52,10 +52,12 @@ h1 { font-size: 1.7rem; margin: 0; font-weight: 900; }
   display: flex; gap: 8px; padding: 0 16px; max-width: 760px; margin: 0 auto;
 }
 .aba {
-  flex: 1; border: none; background: var(--cartao); border-radius: 16px 16px 0 0;
-  padding: 12px 6px; font-size: 1.05rem; font-weight: 800; color: var(--suave);
+  flex: 1; min-width: 0; border: none; background: var(--cartao); border-radius: 16px 16px 0 0;
+  padding: 8px 4px; font-size: .95rem; font-weight: 800; color: var(--suave);
   border-bottom: 4px solid transparent;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
+.aba span { font-size: 1.5rem; line-height: 1.1; }
 .aba.ativa { color: var(--primario); border-bottom-color: var(--primario); }
 
 main { max-width: 760px; margin: 0 auto; padding: 16px; }
@@ -132,6 +134,55 @@ main { max-width: 760px; margin: 0 auto; padding: 16px; }
 }
 .chave .quociente { padding: 0 14px; color: var(--verde); line-height: 1.35em; text-align: left; }
 
+/* Bolinhas */
+.linha-conta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.linha-conta input { width: 4.2em; max-width: none; }
+.escolher-objeto { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.escolher-objeto > span { font-weight: 800; color: var(--suave); }
+.escolher-objeto .chip { font-size: 1.5rem; padding: 2px 8px; }
+#bol-custom {
+  width: 7em; font: inherit; font-size: 1.05rem; padding: 6px 10px; border-radius: 999px;
+  border: 2px solid var(--borda); background: var(--fundo); color: var(--texto);
+}
+#bol-custom.sel { border-color: var(--primario); }
+.mesa { text-align: center; }
+.titulo-conta { font-size: 2.2rem; font-weight: 900; }
+.instrucao { font-size: 1.2rem; line-height: 1.45; background: var(--fundo); border-radius: 14px; padding: 10px 14px; margin: 8px 0 14px; }
+.instrucao.fim { background: #d9f7e6; color: #1b5e3a; }
+#bol-area { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+.sinal { font-size: 2.4rem; font-weight: 900; color: var(--secundario); }
+.grupo-bolas {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+  border: 3px dashed var(--borda); border-radius: 18px; padding: 8px; min-width: 64px; max-width: 100%;
+}
+.grupo-bolas.g1 { border-color: var(--secundario); }
+.grupo-bolas .rotulo { flex-basis: 100%; font-size: .95rem; color: var(--suave); }
+.cinco { display: flex; flex-wrap: wrap; gap: 2px; }
+.bola {
+  position: relative; border: none; background: none; padding: 2px; border-radius: 50%;
+  font-size: 2.2rem; line-height: 1; width: 1.25em; height: 1.25em;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Nunito', sans-serif;
+  transition: transform .1s, opacity .2s;
+}
+.muitas .bola { font-size: 1.6rem; }
+.bola:hover { transform: scale(1.12); }
+.bola.contada { background: var(--destaque); }
+.bola.pop { animation: pulo .35s; }
+.bola.tirada { opacity: .3; }
+.bola.tirada::after {
+  content: "✕"; position: absolute; inset: 0; display: grid; place-items: center;
+  color: var(--vermelho); font-family: 'Nunito', sans-serif; font-weight: 900; font-size: .9em;
+}
+.bola .num {
+  position: absolute; right: -6px; bottom: -4px; min-width: 1.35em; height: 1.35em; padding: 0 3px;
+  border-radius: 99px; background: var(--primario); color: #fff; font: 900 .42em/1.35em 'Nunito', sans-serif;
+}
+.monte { flex-basis: 100%; }
+.caixas { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; flex-basis: 100%; }
+.caixa { min-width: 90px; border: 3px solid var(--secundario); border-style: solid; }
+.caixa .rotulo { font-size: 1.6rem; color: var(--texto); }
+.contagem { font-size: 1.5rem; font-weight: 900; min-height: 1.6em; color: var(--primario); margin-bottom: 10px; }
+
 /* Treino */
 .opcoes { display: flex; flex-direction: column; gap: 10px; }
 .grupo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -192,7 +243,7 @@ main { max-width: 760px; margin: 0 auto; padding: 16px; }
 
 @media (max-width: 480px) {
   h1 { font-size: 1.3rem; }
-  .aba { font-size: .92rem; }
+  .aba { font-size: .8rem; }
   .grade, .chave { font-size: 1.7rem; }
   .pergunta { font-size: 2.4rem; }
 }
